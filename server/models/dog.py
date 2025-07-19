@@ -35,6 +35,33 @@ class Dog(BaseModel):
             raise ValueError("Gender must be 'Male', 'Female', or 'Unknown'")
         return gender
     
+    @validates('age')
+    def validate_age(self, key, age):
+        """
+        Validates a dog's age to ensure it's within acceptable bounds (0-20 years).
+        
+        Args:
+            key: The field name (SQLAlchemy requirement)
+            age: The age value to validate
+            
+        Returns:
+            int: The validated age
+            
+        Raises:
+            ValueError: If age is invalid
+        """
+        if age is None:
+            raise ValueError("Age cannot be empty")
+        
+        # Check for boolean values explicitly since bool is a subclass of int in Python
+        if isinstance(age, bool) or not isinstance(age, int):
+            raise ValueError("Age must be an integer")
+        
+        if age < 0 or age > 20:
+            raise ValueError("Age must be between 0 and 20 years")
+        
+        return age
+    
     @validates('description')
     def validate_description(self, key, description):
         if description is not None:

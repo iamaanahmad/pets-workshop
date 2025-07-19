@@ -1,7 +1,14 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import json
+import sys
+import os
+
+# Add the server directory to the path so we can import from models
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from app import app  # Changed from relative import to absolute import
+from models.dog import Dog
 
 # filepath: server/test_app.py
 class TestApp(unittest.TestCase):
@@ -90,6 +97,52 @@ class TestApp(unittest.TestCase):
         self.assertTrue(isinstance(data, list))
         self.assertEqual(len(data), 1)
         self.assertEqual(set(data[0].keys()), {'id', 'name', 'breed'})
+
+    def test_dog_age_validation_valid_ages(self):
+        """Test that valid ages (0-20) are accepted"""
+        dog = Dog()
+        
+        # Test boundary values and some valid ages
+        valid_ages = [0, 1, 5, 10, 15, 20]
+        
+        for age in valid_ages:
+            with self.subTest(age=age):
+                # This should not raise an exception
+                validated_age = dog.validate_age('age', age)
+                self.assertEqual(validated_age, age)
+    
+    def test_dog_age_validation_invalid_ages(self):
+        """Test that invalid ages raise ValueError"""
+        dog = Dog()
+        
+        # Test ages outside the valid range
+        invalid_ages = [-1, -10, 21, 25, 50]
+        
+        for age in invalid_ages:
+            with self.subTest(age=age):
+                with self.assertRaises(ValueError) as context:
+                    dog.validate_age('age', age)
+                self.assertIn("Age must be between 0 and 20 years", str(context.exception))
+    
+    def test_dog_age_validation_none_value(self):
+        """Test that None age raises ValueError"""
+        dog = Dog()
+        
+        with self.assertRaises(ValueError) as context:
+            dog.validate_age('age', None)
+        self.assertIn("Age cannot be empty", str(context.exception))
+    
+    def test_dog_age_validation_non_integer(self):
+        """Test that non-integer ages raise ValueError"""
+        dog = Dog()
+        
+        invalid_types = ["5", 5.5, "ten", [], {}]
+        
+        for invalid_age in invalid_types:
+            with self.subTest(age=invalid_age):
+                with self.assertRaises(ValueError) as context:
+                    dog.validate_age('age', invalid_age)
+                self.assertIn("Age must be an integer", str(context.exception))
 
 
 if __name__ == '__main__':
